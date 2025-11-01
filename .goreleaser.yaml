@@ -13,7 +13,6 @@ builds:
       - windows
       - darwin
     goarch:
-      - "386"
       - amd64
       - arm
       - arm64
@@ -24,7 +23,7 @@ builds:
         goarch: arm
       - goos: windows
         goarch: arm64
-    main: ./main.go
+    main: .
     binary: rotom
     ldflags:
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
