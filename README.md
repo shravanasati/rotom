@@ -2,6 +2,8 @@
 
 A CLI tool to display Pokémon sprites in your terminal.
 
+![demo](demo.png)
+
 ### Why?
 
 Almost all existing solutions are
