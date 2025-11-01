@@ -15,11 +15,13 @@ Rotom is a single statically-linked binary.
 
 ### Installation
 
+#### From releases (recommended)
+Download the latest release for your platform from the [releases page](https://github.com/shravanasati/rotom/releases).
+
+#### Using Go
 ```bash
 go install github.com/shravanasati/rotom@latest
 ```
-
-Or download from releases.
 
 ### Usage
 

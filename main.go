@@ -4,16 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/urfave/cli/v3"
 	"os"
+
+	"github.com/urfave/cli/v3"
+)
+
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 var errDownloadFirst = errors.New("run the `download` command first")
 
 func main() {
 	rotom := &cli.Command{
-		Name:  "rotom",
-		Usage: "Show pokemon image on terminal.",
+		Name:        "rotom",
+		Usage:       "Show pokemon image on terminal.",
 		Description: "Run it without any arguments to get random pokemon image. You can pass a dex/name to show its image too.",
 		Action: func(ctx context.Context, c *cli.Command) error {
 			dexOrName := c.Args().Get(0)
@@ -39,6 +46,14 @@ func main() {
 				Usage: "Download all pokemon sprites.",
 				Action: func(ctx context.Context, c *cli.Command) error {
 					DownloadAllSprites()
+					return nil
+				},
+			},
+			{
+				Name:  "version",
+				Usage: "Print version information.",
+				Action: func(ctx context.Context, c *cli.Command) error {
+					fmt.Printf("rotom %s (commit: %s, built at: %s)\n", version, commit, date)
 					return nil
 				},
 			},
