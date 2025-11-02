@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 )
@@ -23,7 +24,7 @@ func main() {
 		Usage:       "Show pokemon image on terminal.",
 		Description: "Run it without any arguments to get random pokemon image. You can pass a dex/name to show its image too.",
 		Action: func(ctx context.Context, c *cli.Command) error {
-			dexOrName := c.Args().Get(0)
+			dexOrName := NormalizePokemonName(strings.Join(c.Args().Slice(), " "))
 			if dexOrName == "" {
 				filename, err := getRandomFile(SPRITES_DIR)
 				if err != nil {
@@ -44,6 +45,7 @@ func main() {
 			{
 				Name:  "download",
 				Usage: "Download all pokemon sprites.",
+				Description: fmt.Sprintf("All sprites are downloaded at `%s`.", SPRITES_DIR),
 				Action: func(ctx context.Context, c *cli.Command) error {
 					DownloadAllSprites()
 					return nil

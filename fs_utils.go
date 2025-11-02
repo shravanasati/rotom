@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"iter"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
+	"strings"
 )
 
 func getRandomFile(dir string) (string, error) {
@@ -48,8 +51,33 @@ func searchFile(dexOrName string) (string, error) {
 		return "", fmt.Errorf("fatal: malformed search pattern: %w", err)
 	}
 	if len(files) == 0 {
-		return "", fmt.Errorf("pokemon `%s` not found, ensure correct dex/name and running `download` command", dexOrName)
+		var otherMatchingNames []string
+		if !isDex {
+			// perform * search only if name is provided
+			allSearch := fmt.Sprintf("*%s*", dexOrName)
+			otherMatchingNames, err = filepath.Glob(filepath.Join(SPRITES_DIR, allSearch))
+			if err != nil {
+				panic("other matching names search: " + err.Error())
+			}
+		}
+
+		var didYouMeanText string
+		if len(otherMatchingNames) > 0 {
+			didYouMeanText = "\n\ndid you mean: " + strings.Join(slices.Collect(Map(slices.Values(otherMatchingNames), pokemonNameFromFilename)), "/") + "?"
+		}
+
+		return "", fmt.Errorf("pokemon `%s` not found, ensure correct dex/name and running `download` command%s", dexOrName, didYouMeanText)
 	}
 
 	return files[0], nil
+}
+
+func Map[T, S any](s iter.Seq[T], f func(i T) S) iter.Seq[S] {
+	return func(yield func(S) bool) {
+		for v := range s {
+			if !yield(f(v)) {
+				break
+			}
+		}
+	}
 }

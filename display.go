@@ -26,3 +26,8 @@ func pokemonFromFilename(filename string) (int, string) {
 	}
 	return dex, matches[2]
 }
+
+func pokemonNameFromFilename(file string) string {
+	_, n := pokemonFromFilename(file)
+	return n
+}
