@@ -36,7 +36,7 @@ func getRandomFile(dir string) (string, error) {
 	return filepath.Join(dir, randomFile.Name()), nil
 }
 
-func searchFile(dexOrName string) (string, error) {
+func searchPokemon(dexOrName string) (string, error) {
 	_, err := strconv.Atoi(dexOrName)
 	isDex := err == nil
 	var searchPattern string
@@ -46,7 +46,7 @@ func searchFile(dexOrName string) (string, error) {
 		searchPattern = fmt.Sprintf("*-%s.png", dexOrName)
 	}
 
-	files, err := filepath.Glob(filepath.Join(SPRITES_DIR, searchPattern))
+	files, err := searchFiles(searchPattern)
 	if err != nil {
 		return "", fmt.Errorf("fatal: malformed search pattern: %w", err)
 	}
@@ -54,8 +54,8 @@ func searchFile(dexOrName string) (string, error) {
 		var otherMatchingNames []string
 		if !isDex {
 			// perform * search only if name is provided
-			allSearch := fmt.Sprintf("*%s*", dexOrName)
-			otherMatchingNames, err = filepath.Glob(filepath.Join(SPRITES_DIR, allSearch))
+			wildcardSearch := fmt.Sprintf("*%s*", dexOrName)
+			otherMatchingNames, err = searchFiles(wildcardSearch)
 			if err != nil {
 				panic("other matching names search: " + err.Error())
 			}
@@ -80,4 +80,8 @@ func Map[T, S any](s iter.Seq[T], f func(i T) S) iter.Seq[S] {
 			}
 		}
 	}
+}
+
+func searchFiles(pattern string) ([]string, error) {
+	return filepath.Glob(filepath.Join(SPRITES_DIR, pattern))
 }

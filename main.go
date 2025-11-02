@@ -33,7 +33,7 @@ func main() {
 				return DisplayImage(filename)
 
 			} else {
-				filename, err := searchFile(dexOrName)
+				filename, err := searchPokemon(dexOrName)
 				if err != nil {
 					return err
 				}
@@ -43,8 +43,8 @@ func main() {
 
 		Commands: []*cli.Command{
 			{
-				Name:  "download",
-				Usage: "Download all pokemon sprites.",
+				Name:        "download",
+				Usage:       "Download all pokemon sprites.",
 				Description: fmt.Sprintf("All sprites are downloaded at `%s`.", SPRITES_DIR),
 				Action: func(ctx context.Context, c *cli.Command) error {
 					DownloadAllSprites()
