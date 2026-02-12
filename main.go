@@ -18,6 +18,8 @@ var (
 
 var errDownloadFirst = errors.New("run the `download` command first")
 
+const DEFAULT_MAX_DEX = 1025
+
 func main() {
 	rotom := &cli.Command{
 		Name:        "rotom",
@@ -45,9 +47,25 @@ func main() {
 			{
 				Name:        "download",
 				Usage:       "Download all pokemon sprites.",
-				Description: fmt.Sprintf("All sprites are downloaded at `%s`.", SPRITES_DIR),
+				Description: fmt.Sprintf("All sprites are downloaded at `%s`. Already downloaded sprites are skipped. Pass --force to redownload anyway.", SPRITES_DIR),
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "force",
+						Usage:   "Forcibly download existing sprites.",
+						Aliases: []string{"f"},
+					},
+					&cli.IntFlag{
+						Name:    "number",
+						Usage:   "Maximum number of sprites to download (dex).",
+						Aliases: []string{"n"},
+						Value:   DEFAULT_MAX_DEX,
+					},
+				},
 				Action: func(ctx context.Context, c *cli.Command) error {
-					DownloadAllSprites()
+					DownloadAllSprites(downloadConfig{
+						maxDex:        c.Int("number"),
+						forceDownload: c.Bool("force"),
+					})
 					return nil
 				},
 			},

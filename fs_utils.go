@@ -11,10 +11,11 @@ import (
 	"strings"
 )
 
-func getRandomFile(dir string) (string, error) {
+func getAllFilesDir(dir string) ([]os.DirEntry, error) {
+	emptySlice := []os.DirEntry{}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return "", err
+		return emptySlice, err
 	}
 
 	// Filter out directories, keep only files
@@ -26,7 +27,16 @@ func getRandomFile(dir string) (string, error) {
 	}
 
 	if len(files) == 0 {
-		return "", fmt.Errorf("no files found in directory")
+		return emptySlice, fmt.Errorf("no files found in directory")
+	}
+
+	return files, nil
+}
+
+func getRandomFile(dir string) (string, error) {
+	files, err := getAllFilesDir(dir)
+	if err != nil {
+		return "", err
 	}
 
 	// Pick a random file

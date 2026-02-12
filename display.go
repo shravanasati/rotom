@@ -9,6 +9,8 @@ import (
 	"github.com/blacktop/go-termimg"
 )
 
+var pokemonNameRegex = regexp.MustCompile(`^(\d+)-(.+).png$`)
+
 func DisplayImage(imagePath string) error {
 	termimg.PrintFile(imagePath)
 	dex, name := pokemonFromFilename(imagePath)
@@ -18,7 +20,6 @@ func DisplayImage(imagePath string) error {
 
 func pokemonFromFilename(filename string) (int, string) {
 	baseName := filepath.Base(filename)
-	pokemonNameRegex := regexp.MustCompile(`^(\d+)-(.+).png$`)
 	matches := pokemonNameRegex.FindStringSubmatch(baseName)
 	dex, err := strconv.Atoi(matches[1])
 	if err != nil {

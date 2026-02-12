@@ -1,22 +1,32 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 
 	"github.com/mtslzr/pokeapi-go"
 	"github.com/schollz/progressbar/v3"
 )
 
-const MAX_DEX = 1025
+var errSkipDownload = errors.New("skipped download")
+
 const NUM_WORKERS = 20
+const MAX_RETRIES = 5
 
 var SPRITES_DIR string
+var downloadedSprites []int
+
+type downloadConfig struct {
+	maxDex        int
+	forceDownload bool
+}
 
 func init() {
 	homedir, err := os.UserHomeDir()
@@ -45,20 +55,31 @@ func init() {
 	if err != nil {
 		panic("unable to create sprites directory: " + err.Error())
 	}
+
+	files, err := getAllFilesDir(SPRITES_DIR)
+	if err != nil {
+		return
+	}
+	downloadedSprites = slices.Collect(Map(slices.Values(files), func(o os.DirEntry) int {
+		dex, _ := pokemonFromFilename(o.Name())
+		return dex
+	}))
 }
 
-func DownloadAllSprites() {
-	bar := progressbar.Default(MAX_DEX, "sprites downloaded")
+func DownloadAllSprites(dc downloadConfig) {
+	bar := progressbar.Default(int64(dc.maxDex), "sprites downloaded")
+	successCount := 0
+	newDownloadCount := 0
 
 	jobsChan := make(chan int)
 	resultsChan := make(chan error)
 	for range NUM_WORKERS {
-		go downloadPokemonSpriteWorker(jobsChan, resultsChan)
+		go downloadPokemonSpriteWorker(jobsChan, resultsChan, dc.forceDownload)
 	}
 
 	// send all jobs
 	go func() {
-		for i := range MAX_DEX {
+		for i := range dc.maxDex {
 			dex := i + 1
 			jobsChan <- dex
 		}
@@ -66,22 +87,34 @@ func DownloadAllSprites() {
 	}()
 
 	// collect results
-	for range MAX_DEX {
+	for range dc.maxDex {
 		e := <-resultsChan
-		if e != nil {
+		if e == errSkipDownload {
+			successCount += 1
+		} else if e != nil {
 			fmt.Println("error:", e)
+		} else {
+			newDownloadCount += 1
+			successCount += 1
 		}
 		bar.Add(1)
 	}
+
+	fmt.Printf("Downloaded %v sprites (%v new).\n", successCount, newDownloadCount)
 }
 
-func downloadPokemonSpriteWorker(jobs chan int, results chan error) {
+func downloadPokemonSpriteWorker(jobs chan int, results chan error, forceDownload bool) {
 	for dex := range jobs {
-		results <- downloadPokemonSprite(dex)
+		results <- downloadPokemonSprite(dex, forceDownload)
 	}
 }
 
-func downloadPokemonSprite(dex int) error {
+func downloadPokemonSprite(dex int, forceDownload bool) error {
+	if slices.Contains(downloadedSprites, dex) && !forceDownload {
+		// dont redownload
+		return errSkipDownload
+	}
+
 	pok, err := pokeapi.Pokemon(strconv.Itoa(dex))
 	if err != nil {
 		return err
@@ -95,16 +128,23 @@ func downloadPokemonSprite(dex int) error {
 }
 
 func downloadImage(filename, url string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
+	var lastErr error
+	for range MAX_RETRIES {
+		resp, err := http.Get(url)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		content, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		return os.WriteFile(filepath.Join(SPRITES_DIR, filename), content, 0644)
 	}
 
-	defer resp.Body.Close()
-	content, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(filepath.Join(SPRITES_DIR, filename), content, 0644)
+	return lastErr
 }
